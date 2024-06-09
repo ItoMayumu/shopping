@@ -6,6 +6,8 @@ app_name ='account'
 
 urlpatterns = [
     path('', views.TempView.as_view(), name='top'),
+    path('product/<slug>', views.ItemDetailView.as_view(), name='product'), 
+    path('additem/<slug>', views.addItem, name='additem'),
     path('login/', views.Login.as_view(), name='login'),
     path('logout/',views.LogoutView.as_view(), name='logout'),
     path('my_page/<int:pk>/', views.MyPage.as_view(), name='my_page'),

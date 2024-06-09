@@ -6,11 +6,66 @@ from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView,
 from django.shortcuts import redirect, resolve_url
 from django.urls import reverse_lazy
 from .forms import LoginForm, SignupForm, UserUpdateForm, MyPasswordChangeForm
+from .models import Item,Order,OrderItem
+from django.views.generic import View
+from django.shortcuts import render,get_object_or_404,redirect
+from django.contrib.auth.decorators import login_required
+from django.views.generic import ListView,DetailView,View
+from django.utils import timezone
+
+
+@login_required
+def addItem(request, slug):
+    item = get_object_or_404(Item, slug=slug)
+    order_item, created = OrderItem.objects.get_or_create(
+        item=item,
+        user=request.user,
+        ordered=False
+    )
+    order = Order.objects.filter(user=request.user, ordered=False)
+
+    if order.exists():
+        order = order[0]
+        if order.items.filter(item__slug=item.slug).exists():
+            order_item.quantity += 1
+            order_item.save()
+        else:
+            order.items.add(order_item)
+    else:
+        order = Order.objects.create(user=request.user, ordered_date=timezone.now())
+        order.items.add(order_item)
+
+    return redirect('order')
+
+
 
 '''トップページ'''
-class TempView(generic.TemplateView):
-    template_name = 'account/top.html'
+class TempView(View):
+    def get(self,request,*arges,**kwargs):
+        item_data= Item.objects.all()
+        return render(request,'account/top.html',{
+            'item_data':item_data
+        })
 
+
+class ItemDetailView(View):
+    def get(self,request,*args,**kwargs):
+        item_data = Item.objects.get(slug=self.kwargs['slug'])
+        return render(request,'account/product.html',{
+            'item_data':item_data
+        })
+
+
+
+
+
+
+
+
+
+
+
+# ここからはログイン等ユーザー情報のため変更不可
 class Login(LoginView):
     form_class = LoginForm
     template_name = 'account/login.html'
